@@ -47,14 +47,22 @@ public class Player {
 		shape[3][2] = getPointArray("0,0:1,0:0,1:0,2");
 		shape[3][3] = getPointArray("-2,0:-1,0:0,0:0,1");
 		
-		// _┌━ 모양은 여러분이 만들어보세요.
+//		 _┌━ 모양은 여러분이 만들어보세요.
 		shape[4] = new Point2D[2][];
+		shape[4][0] = getPointArray("-1,0:0,0:0,1:1,1");
+		shape[4][1] = getPointArray("0,1:0,0:1,0:1,-1");
 		
 		// ─┐_ 모양은 여러분이 만들어보세요.
 		shape[5] = new Point2D[2][];
+		shape[5][0] = getPointArray("-1,1:0,1:0,0:1,0");
+		shape[5][1] = getPointArray("0,-1:0,0:1,0:1,1");
 		
 		// ㅗ 모양은 여러분이 만들어보세요.
 		shape[6] = new Point2D[4][];
+		shape[6][0] = getPointArray("-1,0:0,0:0,1:1,0");
+		shape[6][1] = getPointArray("0,1:0,0:1,0:0,-1");
+		shape[6][2] = getPointArray("-1,0:0,0:0,-1:1,0");
+		shape[6][3] = getPointArray("-1,0:0,0:0,1:0,-1");
 		
 		//색상 넣기
 		colorSet[0] = Color.ALICEBLUE;
@@ -74,6 +82,11 @@ public class Player {
 	
 	private void draw(boolean remove) {
 		//블럭을 판에서 표시해주거나 없애주는 매서드
+		for(int i = 0; i < shape[current][rotate].length; i++) {
+			int bx = (int)shape[current][rotate][i].getX() + x;
+			int by = (int)shape[current][rotate][i].getY() + y;
+			board[by][bx].setData(!remove, colorSet[nowColor]); //제거나 색칠이냐
+		}
 	}
 	
 	public Point2D[] getPointArray(String pointStr) {
@@ -91,15 +104,58 @@ public class Player {
 	
 	public void keyHandler(KeyEvent e) {
 		//키보드 입력을 처리하는 매서드
+		int dx = 0, dy = 0;
+		boolean rot = false;
+		if(e.getCode() == KeyCode.LEFT) {
+			dx -= 1;
+		}else if(e.getCode() == KeyCode.RIGHT) {
+			dx += 1;
+		}else if(e.getCode() == KeyCode.UP) {
+			rot = true;			
+		}
+		
+		move(dx, dy, rot); //이동
+		
+		//내려가는 로직은 별도로 관리
+		if(e.getCode() == KeyCode.DOWN) {
+			down();
+		}else if(e.getCode() == KeyCode.SPACE) {
+			while(!down()) {
+				//do nothing
+			}
+		}
 	}
 	
 	private void move(int dx, int dy, boolean rot) {
 		//블럭을 이동시키는 매서드
+		draw(true); //지우고
+		x += dx;
+		y += dy;
+		if(rot)
+			rotate = (rotate + 1) % shape[current].length; //모양 갯수만큼만 증가
+		if(!checkPossible()) {
+			x -= dx;
+			y -= dy;
+			if(rot)  //회전되었었다면 회전도 원상복귀
+				rotate = rotate - 1 < 0 ? shape[current].length - 1 : rotate -1; //하나 다시 빼주고			
+		}
+		draw(false);
 	}
 	
 	public boolean down() {
 		//블럭을 한칸 아래로 내리는 매서드
-		return false;
+		draw(true); //지우기
+		y += 1;
+		if(!checkPossible()) {
+			y -=1;
+			draw(false); //내려놓은 블럭 다시 그려주기
+			App.app.game.checkLineStatus(); //블럭을 내린후에는 현재 라인상태를 체크하도록 함.
+			getNextBlock();
+			draw(false); //이동후 그려주기
+			return true; //종료시에는 true
+		}
+		draw(false); //이동후 그려주기
+		return false; //종료되지 않은경우 false
 	}
 	
 	private void getNextBlock() {
@@ -113,6 +169,13 @@ public class Player {
 	
 	private boolean checkPossible() {
 		//블럭의 이동이 가능한지 체크하는 매서드
-		return true;		
+		for(int i = 0; i < shape[current][rotate].length; i++) {
+			int bx = (int)shape[current][rotate][i].getX() + x;
+			int by = (int)shape[current][rotate][i].getY() + y;
+			if (bx < 0 || by < 0 || bx >= 10 || by >= 20 ) return false;
+			
+			if(board[by][bx].getFill()) return false; //이미 그곳에 블럭이 존재하면
+		}
+		return true;
 	}
 }

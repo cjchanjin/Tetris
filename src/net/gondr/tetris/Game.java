@@ -55,19 +55,50 @@ public class Game {
 		player = new Player(board);
 		mainLoop.start();
 		
-		board[15][1].setData(true, Color.BEIGE);
-		board[15][2].setData(true, Color.BEIGE);
-		board[15][3].setData(true, Color.BEIGE);
-		board[15][4].setData(true, Color.BEIGE);
+//		board[15][1].setData(true, Color.BEIGE);
+//		board[15][2].setData(true, Color.BEIGE);
+//		board[15][3].setData(true, Color.BEIGE);
+//		board[15][4].setData(true, Color.BEIGE);
 	}
 	
 	//업데이트 매서드
 	public void update(double delta) {
 		//매 프레임마다 실행되는 update매서드 블럭의 자동하강 로직을 담당.
+		blockDownTime += delta; //0.5초마다 블럭을 아래로 내린다. 이 수치는 난이도 조절기능에서 조절 가능.
+		if(blockDownTime >= 0.5) {
+			player.down();
+			blockDownTime = 0;
+		}
 	}
 	
 	public void checkLineStatus() {
 		//라인이 꽉 찼는지 체크해주는 매서드
+		for(int i = 19; i >= 0; i--) { //맨 밑칸부터 검사하면서 올라간다.
+			boolean clear = true;
+			for(int j = 0; j < 10; j++) {
+				if(!board[i][j].getFill()) {
+					clear = false; //한칸이라도 비어 있다면 클리어되지 않은 것으로.
+					break;
+				}
+			}
+			if(clear) {//해당 줄이 꽉차 있다면
+				score++;
+				for(int j = 0; j < 10; j++) {
+					board[i][j].setData(false, Color.WHITE); //해당 줄 지우고
+				}
+				//그 위로 한칸씩 다 내린다.
+				for(int k = i - 1;  k >= 0; k--) {
+					for(int j = 0; j < 10; j++) {
+						board[k+1][j].copyData(board[k][j]);
+					}
+				}
+				//첫번째 줄은 비운다.
+				for(int j = 0; j < 10; j++) {
+					board[0][j].setData(false, Color.WHITE);
+				}
+				i++;//그리고 한번더 이번줄을 검사하기 위해 i값을 하나 증가시켜 준다.
+			}
+		}
 	}
 	
 	//렌더 메서드
@@ -88,5 +119,13 @@ public class Game {
 	
 	public void keyHandler(KeyEvent e) {
 		player.keyHandler(e); //키보드 핸들링을 담당하는 매서드
+	}
+	
+	public void setGameOver() {
+		gameOver = true;
+		render();
+		mainLoop.stop();
+		
+		App.app.openPopup(score);
 	}
 }

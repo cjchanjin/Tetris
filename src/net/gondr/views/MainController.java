@@ -11,7 +11,7 @@ public class MainController {
 	
 	@FXML
 	public void initialize() {
-		System.out.println("메인 레이아웃 초기화");
+//		System.out.println("메인 레이아웃 초기화");
 		App.app.game = new Game(gameCanvas);
 
 	}
